@@ -7,7 +7,7 @@ This file tracks verified implementations, not UI-only placeholders.
 | Source inventory | Upstream Singularity 16.2 controllers traced for Buttons/backlight, Sensor Block, Shake/Doze and Dynamic Bar | Match required LineageOS resources/providers, framework SensorService and SystemUI consumers against ProjectInfinity-X source |
 | Feature plan | Updated with X6831 audit evidence | Close remaining hardware evidence gaps |
 | Installer / packaging | Development foundation | Run CI and test install/uninstall on target |
-| Device audit | Two read-only reports collected 2026-11-11 | Close sensor, fingerprint-placement, SELinux backlight, key mapping and audio-control gaps |
+| Device audit | Two read-only reports collected; extended collector now checks alternate sensor dumps, optional SELinux policy query and device-ID-matched keylayouts | Run the updated read-only collector and close remaining sensor, fingerprint-placement, backlight authorization, key mapping and audio-control gaps |
 | Settings integration | Dependency map started; no ROM patch yet | Verify target resource flags, LineageSettings provider implementation, SensorService keys/filters and Dynamic Bar SystemUI consumer |
 | Magisk backend | Diagnostics only | Implement only verified, reversible device controls |
 | Companion app | Not started | Identify features that can use documented Android APIs |
