@@ -47,16 +47,16 @@ The sensor dump was empty and the biometric dump did not establish the active fi
 
 | Singularity area | Main dependencies | Current class after audit | Gate before implementation |
 |---|---|---|---|
-| Buttons / backlight | input keylayout, SystemUI global actions, backlight driver | Backlight node and DAC write bits confirmed; SELinux/runtime control and key mapping unverified / ROM for UI | Design a reversible, user-confirmed write test with read-back and restore; identify physical key mapping; trace exact controller |
+| Buttons / backlight | LineageOS device resource flags, `DeviceKeysConstants`, `LineageSettings` secure/system keys, input/keylayout and device backlight driver | ROM integration for the Singularity UI/controller; X6831 hardware backlight node exists, but it is not evidence of a Lineage button-backlight backend | Confirm `config_deviceSupportsButtonBrightnessControl`, hardware-key resource flags, and the matching Lineage provider/driver implementation in ProjectInfinity-X. Do not map the LCD backlight node to button brightness |
 | Lockscreen clocks / widgets / media art | Keyguard and SystemUI APIs | ROM integration | Match ProjectInfinity-X SystemUI/framework APIs |
 | UDFPS animation / icon | under-display fingerprint HAL and SystemUI | Unsupported unless UDFPS is confirmed | Confirm sensor location/type and biometric service |
-| Sensor Block / Shake Gestures | sensor HAL, privileged service, sensor privacy | Unverified / ROM | Obtain non-empty sensor inventory and identify handles/service contract |
-| Idle Manager / Doze / Pickup | DeviceIdle, SystemUI Doze, sensor APIs | ROM integration / sensor-dependent | Trace receivers, permissions, sensor handles and service lifecycle |
+| Sensor Block / Shake Gestures | SensorService framework filtering, `Settings.Global` keys, sensor HAL and privileged Settings integration | ROM integration / unverified on X6831 | Sensor Block UI writes `SENSOR_BLOCK` and `SENSOR_BLOCKED_APP`; actual per-app blocking needs framework SensorService support. Obtain non-empty sensor inventory and trace the framework implementation before considering it |
+| Idle Manager / Doze / Pickup | framework config resources, SystemUI `doze.pulse` broadcast, Secure Settings, SensorManager and sensor-specific resources | ROM integration / sensor-dependent | Singularity Doze service checks `config_dozePulseTilt/Pickup/Proximity`, registers sensor listeners and reacts to screen state; confirm target resource flags, sensors, service permission/lifecycle and SystemUI receiver |
 | Pixel / app spoofing / integrity tools | property APIs and third-party root integrations | Unverified / high risk | No blanket spoofing or integrity bypass; require explicit safe scope |
 | Notification light | notification pipeline and LED hardware | No separate notification LED observed | Recheck actual hardware/ROM support before considering implementation |
 | Quick Settings layout / header | SystemUI resources and controllers | ROM integration | Match SystemUI resource IDs and overlay policy |
 | Sound customization | audio policy, vendor audio HAL, mixer paths | Unverified | Inspect actual vendor config and runtime controls; never guess mixer values |
-| Status bar / battery bar / Dynamic Bar | SystemUI hooks | ROM integration | Requires matching SystemUI hooks or source patch |
+| Status bar / battery bar / Dynamic Bar | SystemUI rendering/event listeners plus Secure Settings contract | ROM integration | Dynamic Bar preferences use `ax_dynamic_bar_enabled`, `ax_dynamic_bar_keyguard_enabled`, `ax_dynamic_bar_events`, compact-notification and battery-chip keys; matching SystemUI consumers are required |
 | Charging animation / Edge Light | SystemUI hooks | ROM integration | Trace ROM implementation and display behavior |
 | Fonts | framework font configuration / overlay | Magisk only if target supports it | Verify supported font overlay mechanism and rollback |
 | Video wallpaper | WallpaperManager and wallpaper service | Companion | Package and test a compatible WallpaperService |
@@ -85,3 +85,39 @@ The X6831 read-only audit has been collected. Hardware-facing work is now narrow
 - No core SystemUI/framework APK replacement as a first-line strategy.
 - Never advertise an inert preference as a working feature.
 - Keep unsupported features absent or explicitly marked unavailable.
+
+
+## Upstream controller trace (Singularity 16.2)
+
+This pass traced controller code and preference XML in `Lunaris-AOSP/packages_apps_Singularity`. It establishes what the upstream UI expects; it does **not** establish that ProjectInfinity-X contains the corresponding backend.
+
+### Buttons / backlight
+
+- `Buttons.java` builds its button controls from device resource flags such as `config_deviceHardwareKeys` and `config_deviceHardwareWakeKeys`; it does not infer hardware keys from arbitrary input-device names.
+- `DeviceUtils.hasButtonBacklightSupport()` requires `config_deviceSupportsButtonBrightnessControl` and at least one supported hardware-key bit (home/back/menu/assist/app-switch).
+- `ButtonBacklightBrightness` uses LineageOS provider settings: `LineageSettings.Secure.BUTTON_BRIGHTNESS` and `LineageSettings.System.BUTTON_BACKLIGHT_ONLY_WHEN_PRESSED`. The keyboard path separately uses `KEYBOARD_BRIGHTNESS` and `config_deviceSupportsKeyboardBrightnessControl`.
+- Therefore the X6831 LCD panel node `/sys/class/leds/lcd-backlight` is **not** a valid substitute for the LineageOS button-backlight provider/driver. The device audit did not establish capacitive/navigation backlight hardware or its mapping.
+
+### Sensor Block
+
+- `sensor_block_settings.xml` exposes a `GlobalSettingMainSwitchPreference` with key `sensor_block`.
+- `SensorBlock.java` stores the per-app package list in `Settings.Global.SENSOR_BLOCKED_APP`; reset also writes `Settings.Global.SENSOR_BLOCK`.
+- The Settings UI and Global keys only represent the control surface. Per-app sensor suppression requires a matching framework SensorService implementation that reads those keys and filters sensor delivery. A Magisk service that merely writes the keys would be an inert toggle on a ROM without that framework consumer.
+- X6831's audit still has no usable sensor inventory, so no app-level sensor feature is enabled.
+
+### Shake / Doze / Pickup
+
+- The current `ShakeGestures.java` fragment only loads its preference XML; the source inspected here does not establish a standalone Magisk backend.
+- Singularity's Doze `Utils` reads framework resource flags `config_dozePulseTilt`, `config_dozePulsePickup`, and `config_dozePulseProximity`, plus Secure Settings such as `DOZE_TILT_GESTURE`, `DOZE_PICK_UP_GESTURE`, `DOZE_HANDWAVE_GESTURE`, `DOZE_POCKET_GESTURE`, and `RAISE_TO_WAKE_GESTURE`.
+- `DozeService` starts only when supported sensor resources and enabled settings allow it; it listens for screen on/off and registers Tilt, Pickup and Proximity listeners. Those listeners use Android SensorManager, PowerManager/wakelocks and SystemUI's `com.android.systemui.doze.pulse` broadcast.
+- These are service + framework resource + SystemUI dependencies, not a boot script alone. X6831's empty sensor dump leaves actual sensor support unverified.
+
+### Dynamic Bar
+
+- `dynamic_bar.xml` defines the main Secure Setting `ax_dynamic_bar_enabled` and related keyguard, compact-notification and event preferences.
+- `DynamicBar.kt` persists `ax_dynamic_bar_keyguard_enabled`, `ax_dynamic_bar_events`, `ax_dynamic_bar_compact_notifications`, and `ax_dynamic_bar_keyguard_battery_chip_mode`; event IDs include media, call, notification, timer, charging, torch and biometric unlock.
+- The fragment only persists preference state. The actual Dynamic Bar visuals and event behavior need corresponding SystemUI code to observe those settings and render/update the bar. Writing the keys from Magisk cannot add that missing consumer.
+
+### Port decision from this trace
+
+No feature above is promoted to implemented. First viable work remains limited to features whose complete consumer/backend already exists on ProjectInfinity-X and can be safely configured systemlessly. Buttons, Sensor Block, Doze gestures and Dynamic Bar remain ROM-integration work until the target ROM's matching resources, providers, framework hooks and SystemUI consumers are verified.
