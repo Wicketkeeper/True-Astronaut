@@ -19,6 +19,26 @@ This is an implementation inventory, not a claim that the features are already p
 | Status Bar | Battery bar, clock, cutout progress, lyrics, Dynamic Bar/Dynamic Island, Lunaris Bar cards/editor | SystemUI status bar/notification shade/keyguard | Primarily SystemUI integration; standalone Magisk can only support compatible overlays/configuration. |
 | Themes | Charging animation, forced fullscreen cutout, Doze, Edge Light, Gradient, lockscreen glimpse, Smart Pixels, video wallpaper, fonts | SystemUI, framework overlays, WallpaperManager/service, display panel/kernel | Mixed. Smart Pixels needs panel support; video wallpaper can be a companion service; Doze/edge light require SystemUI hooks. |
 
+
+## Preference XML map (upstream branch 16.2)
+
+The following XML files anchor the settings UI and help trace each preference to its backend. They are not standalone implementations.
+
+- **Buttons:** `power_menu.xml`, `power_menu_actions.xml`, `power_off_verify.xml`
+- **Lockscreen:** `clock_styles.xml`, `lockscreen_clock_preview_settings.xml`, `media_art_settings.xml`, `nowplaying_settings.xml`, `pulse_settings.xml`, `rising_settings_lockscreen_widgets.xml`, `wallpaper_depth.xml`, `lunaris_settings_udfps_custom.xml`
+- **Miscellaneous:** `sensor_block_settings.xml`, `shake_settings_gestures.xml`, `quick_switch.xml`, `spoofing.xml`, `play_integrity_fix.xml`, `tricky_store.xml`, `hide_applist_prefs.xml`
+- **Notifications:** `notification_light_settings.xml`, `battery_light_settings.xml`
+- **Quick Settings:** `qs_layout_settings.xml`, `qs_header_image_settings.xml`
+- **Status Bar:** `battery_bar.xml`, `status_bar_clock.xml`, `status_bar_lyric_settings.xml`, `cutout_progress_settings.xml`, `dynamic_bar.xml`, `dynamic_island_settings.xml`, `lunaris_bar_appearance.xml`, `lunaris_bar_card.xml`, `lunaris_bar_cards.xml`, `lunaris_bar_colors.xml`, `lunaris_bar_feature_style.xml`, `lunaris_bar_features.xml`, `lunaris_bar_gestures.xml`, `lunaris_bar_media.xml`, `lunaris_bar_motion.xml`, `lunaris_bar_preference_templates.xml`
+- **Themes:** `charging_animation_settings.xml`, `doze_settings.xml`, `edge_light_settings.xml`, `gradient_settings.xml`, `lock_glymps_settings.xml`, `smart_pixels.xml`, `video_wallpaper_settings.xml`, `wallpaper_settings.xml`
+- **Common:** `lunaris_settings.xml`, `lunaris_settings_button.xml`, `lunaris_settings_lock_screen.xml`, `lunaris_settings_miscellaneous.xml`, `lunaris_settings_notifications.xml`, `lunaris_settings_quick_settings.xml`, `lunaris_settings_sound.xml`, `lunaris_settings_status_bar.xml`, `lunaris_settings_themes.xml`
+
+Additional implementation-heavy source groups:
+- Doze implementation: `themes/doze/AODSchedule`, `DozeReceiver`, `DozeService`, `PickupSensor`, `ProximitySensor`, `TiltSensor`.
+- Notification light UI/backend controllers: `notifications/notificationlight/*`.
+- Font picker/manager: `themes/fonts/*`.
+- Video wallpaper: `VideoWallpaperFragment`, `VideoWallpaperService`, `VideoWallpaperViewModel`.
+
 ## Porting rules
 
 1. Preserve upstream feature names and behavior; do not add unrelated Settings features.
