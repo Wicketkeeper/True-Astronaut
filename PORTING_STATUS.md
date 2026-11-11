@@ -4,16 +4,22 @@ This file tracks verified implementations, not UI-only placeholders.
 
 | Area | Current state | Next work |
 |---|---|---|
-| Source inventory | Baseline mapped | Trace each upstream controller and dependency |
+| Source inventory | Upstream Singularity 16.2 controllers traced for Buttons/backlight, Sensor Block, Shake/Doze and Dynamic Bar | Match required LineageOS resources/providers, framework SensorService and SystemUI consumers against ProjectInfinity-X source |
 | Feature plan | Updated with X6831 audit evidence | Close remaining hardware evidence gaps |
 | Installer / packaging | Development foundation | Run CI and test install/uninstall on target |
 | Device audit | Two read-only reports collected 2026-11-11 | Close sensor, fingerprint-placement, SELinux backlight, key mapping and audio-control gaps |
-| Settings integration | Not started | Map Lunaris Settings references and ROM-only APIs |
+| Settings integration | Dependency map started; no ROM patch yet | Verify target resource flags, LineageSettings provider implementation, SensorService keys/filters and Dynamic Bar SystemUI consumer |
 | Magisk backend | Diagnostics only | Implement only verified, reversible device controls |
 | Companion app | Not started | Identify features that can use documented Android APIs |
 | ROM integration | Not started | Prepare ProjectInfinity-X patches for SystemUI/framework features |
 | SELinux | Not started | Add only narrowly scoped rules proven necessary |
 | Device validation | Pending | Test on X6831 Android 16 / API 36 |
+
+## Latest upstream trace
+
+The Singularity 16.2 source pass confirms that Buttons/backlight depends on LineageOS hardware-key resource flags and `LineageSettings` provider keys; Sensor Block needs a framework SensorService consumer for `SENSOR_BLOCK` / `SENSOR_BLOCKED_APP`; Doze gestures depend on framework sensor resource flags, Secure Settings, a sensor-listener service and SystemUI's doze-pulse broadcast; Dynamic Bar needs SystemUI code consuming its `ax_dynamic_bar_*` Secure Settings. These are not delivered by writing settings from a Magisk boot script. The X6831 LCD backlight node is not assumed to be a button-backlight device.
+
+No Singularity feature is implemented or device-tested yet. The source trace is recorded in `docs/FEATURE_PORT_PLAN.md`.
 
 ## Current build status
 
