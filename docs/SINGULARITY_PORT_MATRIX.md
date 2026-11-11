@@ -61,24 +61,24 @@ Additional implementation-heavy source groups:
 - Kernel: `4.19.191-g5048da07dcbc-dirty`
 - Reported system/vendor fingerprint still contains an Android 12 build string. Treat it as inherited vendor/system identity, not as the running Android release.
 - Magisk Kitsune v30.71 is installed; the audit ran as root.
-- `/sys/class/leds/lcd-backlight` exists and reports `max_brightness=3750`; the audit did not verify write access or SELinux permission.
+- `/sys/class/leds/lcd-backlight` exists and reports `max_brightness=3750`; the latest report shows mode `-rw-rw-rw-` and SELinux type `sysfs_backlight_file`, but no write was attempted and SELinux authorization was not established (`sesearch` unavailable). Latest brightness snapshot is `64`; an earlier snapshot was `0`.
 - The LED classes listed are LCD backlight, flashlight and vibrator; no separate notification LED was listed.
-- Sensor and fingerprint services exist, but the sensor dump was empty and fingerprint placement/UDFPS capability was not established.
-- Vendor audio HAL and policy services run, but the audit did not identify mixer control names or safe tuning values.
-- MTK key input devices exist; keylayout files were listed but their mappings were not read.
+- Sensor and fingerprint services exist, but standard and extended sensor dumps were empty despite a running MTK Sensors 2.0 multihal service and `ro.vendor.mtk.sensor.support=yes`; fingerprint binaries for generic 2.1, FocalTech and Silead are present, but active HAL and placement/UDFPS capability were not established.
+- Vendor audio HAL and policy services run, but `audio_effects.xml` declares equalizer, bassboost, virtualizer and DTS effects, but `tinymix`/`amixer` are absent and mixer control names or safe tuning values remain unknown.
+- MTK key input devices exist; input modaliases were captured, but no matching device-specific keylayout mapping was established.
 
 ## Read-only target audit
 
 The diagnostic collector at `tools/collect-device-audit.sh` has been run on the X6831. It only reads properties, service lists, sensor information, and selected sysfs/vendor configuration metadata; it does not write settings or alter the device.
 
-The first audit is complete. Do not rerun it merely as a prerequisite; use targeted read-only checks to close the open evidence gaps before implementing backlight, sensor, UDFPS, Doze, Smart Pixels, key or audio features.
+Three read-only audit reports have been collected, including a follow-up with extended sensorservice commands, SELinux process context, input modaliases and audio effect declarations. Sensor inventory remains empty; the latest backlight value is a snapshot only. Use targeted read-only checks to close open evidence gaps before implementing backlight, sensor, UDFPS, Doze, Smart Pixels, key or audio features.
 
 ## Next audit / implementation sequence
 
 - [ ] Read every feature controller and its referenced preference XML/string/resource keys.
 - [ ] Trace settings keys and calls into SystemUI/framework/vendor services.
 - [ ] Targeted read-only check: backlight node permissions, current brightness, SELinux context and safe supported write interface (do not change brightness during audit).
-- [ ] Targeted read-only check: sensorservice inventory and fingerprint sensor placement/type.
+- [ ] Targeted read-only check: obtain a real sensor inventory from HAL/service diagnostics and establish active fingerprint HAL and sensor placement/type.
 - [ ] Read actual keylayout mappings for detected physical key devices.
 - [ ] Inspect vendor audio policy/effects and available mixer controls without writing values.
 - [ ] Build a feature-by-feature compatibility report with exact upstream source references.
