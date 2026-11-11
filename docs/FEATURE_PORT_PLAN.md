@@ -66,7 +66,7 @@ The sensor dump was empty and the biometric dump did not establish the active fi
 
 The repository contains a diagnostics-only Magisk scaffold. It does not yet install feature backends, replace system APKs, change kernel nodes, alter audio mixer values, spoof properties, or broaden SELinux policy.
 
-The X6831 read-only audit has been collected. Hardware-facing work is now narrowed by the evidence above; unresolved sensor inventory, active fingerprint HAL/placement, SELinux backlight write authorization and runtime behavior, device-specific key mapping, and audio mixer controls must be measured before implementation.
+The X6831 read-only audits have been collected. The follow-up collector now additionally tries `dumpsys sensorservice -a` / `cmd sensorservice help`, records the current SELinux domain and an optional read-only `sesearch` query for backlight write permission, and matches input event vendor/product IDs to exact keylayout filenames when available. These new checks are pending a fresh device report; they do not write to the device. Hardware-facing work remains blocked on unresolved sensor inventory, active fingerprint HAL/placement, SELinux backlight authorization/runtime behavior, device-specific key mapping, and audio mixer controls.
 
 ## Implementation order
 
