@@ -61,6 +61,20 @@ Additional implementation-heavy source groups:
 - Kernel: `4.19.191-g5048da07dcbc-dirty`
 - Reported system/vendor fingerprint still contains an Android 12 build string. Treat it as inherited vendor/system identity, not as the running Android release.
 
+
+## Read-only target audit
+
+A diagnostic collector is available at `tools/collect-device-audit.sh`. It only reads properties, service lists, sensor information, and selected sysfs/vendor configuration metadata; it does not write settings or alter the device.
+
+From Windows CMD in the repository directory:
+
+```bat
+adb push tools/collect-device-audit.sh /data/local/tmp/ta-audit.sh
+adb shell su -c "sh /data/local/tmp/ta-audit.sh" > x6831-audit.txt
+```
+
+Review the generated report before sharing it. It may contain device/build identifiers; redact serial numbers or other private identifiers. This report is the next required input before implementing hardware-facing backlight, notification-light, sensor, UDFPS, Doze, Smart Pixels, or audio features.
+
 ## Next audit / implementation sequence
 
 - [ ] Read every feature controller and its referenced preference XML/string/resource keys.
