@@ -5,9 +5,9 @@ This file tracks verified implementations, not UI-only placeholders.
 | Area | Current state | Next work |
 |---|---|---|
 | Source inventory | Baseline mapped | Trace each upstream controller and dependency |
-| Feature plan | Added | Validate classes against upstream source and X6831 audit |
+| Feature plan | Updated with X6831 audit evidence | Close remaining hardware evidence gaps |
 | Installer / packaging | Development foundation | Run CI and test install/uninstall on target |
-| Device audit | Read-only collector available | Collect and review X6831 report |
+| Device audit | Collected 2026-11-11 | Inspect backlight write access, sensor inventory, key mappings and audio controls |
 | Settings integration | Not started | Map Lunaris Settings references and ROM-only APIs |
 | Magisk backend | Diagnostics only | Implement only verified, reversible device controls |
 | Companion app | Not started | Identify features that can use documented Android APIs |
@@ -19,9 +19,11 @@ This file tracks verified implementations, not UI-only placeholders.
 
 The development ZIP is a diagnostics-only scaffold. It does not yet provide Lunaris Singularity feature functionality. The installer identifies the device/API and the late-start service writes a local diagnostic log; no guessed sysfs writes, audio tuning, property spoofing, framework replacement, or broad SELinux rules are applied.
 
-## Required next input
+## X6831 audit findings
 
-Run `tools/collect-device-audit.sh` as root on the X6831 and share the reviewed report. Redact serial numbers and other private identifiers first. Hardware-facing work (backlight, LEDs, sensors, fingerprint, Doze, Smart Pixels and audio) must wait for that evidence.
+The read-only audit confirms Infinix X6831 / MT6768, Android 16 / API 36, arm64, and Magisk Kitsune v30.71. It found an LCD backlight node at `/sys/class/leds/lcd-backlight` with a reported maximum of 3750, but did not establish writable access or safe runtime control. The listed LED classes were LCD backlight, flashlight, and vibrator; no separate notification LED was listed.
+
+Sensor and biometric services exist, but the sensor dump was empty and fingerprint sensor placement was not established. Vendor audio services/configuration exist, but mixer controls were not identified. See `docs/FEATURE_PORT_PLAN.md` for the evidence table and limitations.
 
 ## Implementation rules
 
