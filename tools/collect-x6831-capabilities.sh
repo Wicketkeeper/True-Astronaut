@@ -33,12 +33,31 @@ for f in /sys/class/leds/lcd-backlight /sys/class/leds/lcd-backlight/brightness 
 done
 
 section "SENSOR INVENTORY"
-echo "-- dumpsys sensorservice"
+echo "-- dumpsys sensorservice (standard)"
 dumpsys sensorservice 2>&1 | head -n 260
-echo "-- service list"
+echo "-- dumpsys sensorservice -a (extended, if supported)"
+dumpsys sensorservice -a 2>&1 | head -n 360
+echo "-- cmd sensorservice help (if supported)"
+cmd sensorservice help 2>&1 | head -n 100
+echo "-- sensor-related services"
 service list 2>/dev/null | grep -i sensor || true
+echo "-- sensor-related properties"
+getprop | grep -i sensor | head -n 120
 echo "-- vendor sensor HAL init"
 ls -lZ /vendor/etc/init/android.hardware.sensors* 2>/dev/null || true
+
+section "BACKLIGHT SELINUX READ-ONLY CONTEXT"
+echo "-- current shell SELinux context"
+id -Z 2>/dev/null || true
+echo "-- relevant process contexts"
+ps -AZ 2>/dev/null | grep -iE 'magisk|system_server|surfaceflinger' | head -n 80
+echo "-- optional policy query tool"
+if command -v sesearch >/dev/null 2>&1; then
+  DOMAIN="$(id -Z 2>/dev/null | cut -d: -f3)"
+  [ -n "$DOMAIN" ] && sesearch -A -s "$DOMAIN" -t sysfs_backlight_file -c file -p write 2>&1 | head -n 120
+else
+  echo "sesearch not found; SELinux allow/deny rule not established"
+fi
 
 section "FINGERPRINT CAPABILITY (NO BIOMETRIC DATA)"
 service list 2>/dev/null | grep -iE 'fingerprint|biometric' || true
@@ -49,11 +68,25 @@ getprop | grep -iE 'udfps|fingerprint.*(type|position|location)|biometric' | hea
 
 section "PHYSICAL INPUT / KEYLAYOUT"
 cat /proc/bus/input/devices 2>/dev/null
+for ev in /sys/class/input/event*; do
+  [ -e "$ev" ] || continue
+  name="$(cat "$ev/device/name" 2>/dev/null)"
+  vid="$(cat "$ev/device/id/vendor" 2>/dev/null | tr 'a-f' 'A-F')"
+  pid="$(cat "$ev/device/id/product" 2>/dev/null | tr 'a-f' 'A-F')"
+  echo "-- $ev name=$name vendor=$vid product=$pid"
+  cat "$ev/device/uevent" 2>/dev/null | head -n 40
+  [ -n "$vid" ] && [ -n "$pid" ] || continue
+  for d in /vendor/usr/keylayout /odm/usr/keylayout /system/usr/keylayout; do
+    [ -d "$d" ] || continue
+    for kl in "$d"/Vendor_"$vid"_Product_"$pid".kl "$d"/Vendor_"$vid"_Product_"$pid"_*.kl; do
+      [ -f "$kl" ] && { echo "-- exact device keylayout: $kl"; cat "$kl"; }
+    done
+  done
+done
 for d in /vendor/usr/keylayout /odm/usr/keylayout /system/usr/keylayout; do
   [ -d "$d" ] || continue
-  echo "-- keylayout directory: $d"
+  echo "-- keylayout directory inventory: $d"
   ls -l "$d" 2>/dev/null
-  grep -HnE '^(key|axis) ' "$d"/*.kl 2>/dev/null | head -n 240
 done
 
 section "AUDIO READ-ONLY INVENTORY"
