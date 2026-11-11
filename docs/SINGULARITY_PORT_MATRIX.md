@@ -10,12 +10,12 @@ This is an implementation inventory, not a claim that the features are already p
 
 | Area | Upstream source files / feature groups | Likely implementation layer | Initial assessment |
 |---|---|---|---|
-| Buttons | `ButtonBacklightBrightness`, `Buttons`, `PowerMenuActions`, `PowerOffVerify` | Settings provider, input/keylayout, SystemUI/global actions, device kernel | Mixed. Backlight node and key support must be discovered on X6831; power-menu actions need SystemUI support. |
-| Lockscreen | Clock styles/picker, widgets, media art, Now Playing/Pulse, UDFPS animation/icon, wallpaper depth | SystemUI/Keyguard, framework overlays, Settings, fingerprint HAL | Mostly ROM/framework-dependent. UDFPS-specific items may not apply unless this device has an under-display sensor. |
-| Miscellaneous | Sensor Block, Shake Gestures, Idle Manager, QuickSwitch, Pixel Props, app spoofing, Play Integrity/TrickyStore/Duck RKP/Tensor targets | Privileged services, Zygisk/root integrations, device properties, kernel sensors | Mixed and high-risk. Hardware- and module-specific checks required; no blanket spoofing or integrity bypass is assumed. |
-| Notifications | Essential Notifications, notification light | SystemUI notification pipeline, notification manager, device LED hardware | ROM-dependent; notification-light feature depends on actual LED hardware and vendor implementation. |
+| Buttons | `ButtonBacklightBrightness`, `Buttons`, `PowerMenuActions`, `PowerOffVerify` | Settings provider, input/keylayout, SystemUI/global actions, device kernel | Mixed. X6831 has an LCD backlight node; write access and key mappings are unverified. Power-menu actions need SystemUI support. |
+| Lockscreen | Clock styles/picker, widgets, media art, Now Playing/Pulse, UDFPS animation/icon, wallpaper depth | SystemUI/Keyguard, framework overlays, Settings, fingerprint HAL | Mostly ROM/framework-dependent. No UDFPS evidence in the audit; do not assume under-display fingerprint hardware. |
+| Miscellaneous | Sensor Block, Shake Gestures, Idle Manager, QuickSwitch, Pixel Props, app spoofing, Play Integrity/TrickyStore/Duck RKP/Tensor targets | Privileged services, Zygisk/root integrations, device properties, kernel sensors | Mixed and high-risk. Sensor service exists but sensor inventory was empty; hardware/module-specific checks required. |
+| Notifications | Essential Notifications, notification light | SystemUI notification pipeline, notification manager, device LED hardware | ROM-dependent; audit listed backlight, flashlight and vibrator LED classes but no separate notification LED. |
 | Quick Settings | QS layout, header image | SystemUI resources/plugins/overlays | Requires compatible SystemUI hooks or resource overlays; a settings toggle alone cannot add the behavior. |
-| Sound | Sound customization | Audio framework, vendor audio HAL, mixer paths, audio effects | Requires inspection of X6831 audio policy/HAL; never write guessed mixer paths. |
+| Sound | Sound customization | Audio framework, vendor audio HAL, mixer paths, audio effects | Audio HAL/policy services are present; exact mixer controls remain unknown. Never write guessed mixer paths. |
 | Status Bar | Battery bar, clock, cutout progress, lyrics, Dynamic Bar/Dynamic Island, Lunaris Bar cards/editor | SystemUI status bar/notification shade/keyguard | Primarily SystemUI integration; standalone Magisk can only support compatible overlays/configuration. |
 | Themes | Charging animation, forced fullscreen cutout, Doze, Edge Light, Gradient, lockscreen glimpse, Smart Pixels, video wallpaper, fonts | SystemUI, framework overlays, WallpaperManager/service, display panel/kernel | Mixed. Smart Pixels needs panel support; video wallpaper can be a companion service; Doze/edge light require SystemUI hooks. |
 
@@ -60,26 +60,27 @@ Additional implementation-heavy source groups:
 - `ro.board.platform=mt6768`
 - Kernel: `4.19.191-g5048da07dcbc-dirty`
 - Reported system/vendor fingerprint still contains an Android 12 build string. Treat it as inherited vendor/system identity, not as the running Android release.
-
+- Magisk Kitsune v30.71 is installed; the audit ran as root.
+- `/sys/class/leds/lcd-backlight` exists and reports `max_brightness=3750`; the audit did not verify write access or SELinux permission.
+- The LED classes listed are LCD backlight, flashlight and vibrator; no separate notification LED was listed.
+- Sensor and fingerprint services exist, but the sensor dump was empty and fingerprint placement/UDFPS capability was not established.
+- Vendor audio HAL and policy services run, but the audit did not identify mixer control names or safe tuning values.
+- MTK key input devices exist; keylayout files were listed but their mappings were not read.
 
 ## Read-only target audit
 
-A diagnostic collector is available at `tools/collect-device-audit.sh`. It only reads properties, service lists, sensor information, and selected sysfs/vendor configuration metadata; it does not write settings or alter the device.
+The diagnostic collector at `tools/collect-device-audit.sh` has been run on the X6831. It only reads properties, service lists, sensor information, and selected sysfs/vendor configuration metadata; it does not write settings or alter the device.
 
-From Windows CMD in the repository directory:
-
-```bat
-adb push tools/collect-device-audit.sh /data/local/tmp/ta-audit.sh
-adb shell su -c "sh /data/local/tmp/ta-audit.sh" > x6831-audit.txt
-```
-
-Review the generated report before sharing it. It may contain device/build identifiers; redact serial numbers or other private identifiers. This report is the next required input before implementing hardware-facing backlight, notification-light, sensor, UDFPS, Doze, Smart Pixels, or audio features.
+The first audit is complete. Do not rerun it merely as a prerequisite; use targeted read-only checks to close the open evidence gaps before implementing backlight, sensor, UDFPS, Doze, Smart Pixels, key or audio features.
 
 ## Next audit / implementation sequence
 
 - [ ] Read every feature controller and its referenced preference XML/string/resource keys.
 - [ ] Trace settings keys and calls into SystemUI/framework/vendor services.
-- [ ] Inspect target device hardware: fingerprint type, notification LED, display panel, backlight, audio HAL, sensor list, keylayout, sysfs.
+- [ ] Targeted read-only check: backlight node permissions, current brightness, SELinux context and safe supported write interface (do not change brightness during audit).
+- [ ] Targeted read-only check: sensorservice inventory and fingerprint sensor placement/type.
+- [ ] Read actual keylayout mappings for detected physical key devices.
+- [ ] Inspect vendor audio policy/effects and available mixer controls without writing values.
 - [ ] Build a feature-by-feature compatibility report with exact upstream source references.
 - [ ] Implement safe Magisk-backed items first, then companion-service items.
 - [ ] Keep ROM/framework-only items documented as requiring a matching ProjectInfinity-X source patch; do not simulate them with inert toggles.
