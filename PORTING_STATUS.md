@@ -7,7 +7,7 @@ This file tracks verified implementations, not UI-only placeholders.
 | Source inventory | Baseline mapped | Trace each upstream controller and dependency |
 | Feature plan | Updated with X6831 audit evidence | Close remaining hardware evidence gaps |
 | Installer / packaging | Development foundation | Run CI and test install/uninstall on target |
-| Device audit | Collected 2026-11-11 | Inspect backlight write access, sensor inventory, key mappings and audio controls |
+| Device audit | Two read-only reports collected 2026-11-11 | Close sensor, fingerprint-placement, SELinux backlight, key mapping and audio-control gaps |
 | Settings integration | Not started | Map Lunaris Settings references and ROM-only APIs |
 | Magisk backend | Diagnostics only | Implement only verified, reversible device controls |
 | Companion app | Not started | Identify features that can use documented Android APIs |
@@ -21,9 +21,9 @@ The development ZIP is a diagnostics-only scaffold. It does not yet provide Luna
 
 ## X6831 audit findings
 
-The read-only audit confirms Infinix X6831 / MT6768, Android 16 / API 36, arm64, and Magisk Kitsune v30.71. It found an LCD backlight node at `/sys/class/leds/lcd-backlight` with a reported maximum of 3750, but did not establish writable access or safe runtime control. The listed LED classes were LCD backlight, flashlight, and vibrator; no separate notification LED was listed.
+The read-only audits confirm Infinix X6831 / MT6768, Android 16 / API 36, arm64, and Magisk Kitsune v30.71. The LCD backlight node reports `max_brightness=3750`; its `brightness` file has `-rw-rw-rw-` mode and SELinux type `sysfs_backlight_file`, but no write was attempted and SELinux authorization/runtime behavior are unproven. The captured brightness value was `0`. The listed LED classes were LCD backlight, flashlight, and vibrator; no separate notification LED was listed.
 
-Sensor and biometric services exist, but the sensor dump was empty and fingerprint sensor placement was not established. Vendor audio services/configuration exist, but mixer controls were not identified. See `docs/FEATURE_PORT_PLAN.md` for the evidence table and limitations.
+Sensor service exists but its inventory dump was empty. Fingerprint services and FocalTech/Silead components are present, but the active HAL and sensor placement were not established. Physical input devices were listed without a device-specific key mapping. Vendor audio policy/effects declare supported ports and effects, but `tinymix` and `amixer` are unavailable, so runtime mixer controls remain unknown. See `docs/FEATURE_PORT_PLAN.md` for the evidence table and limitations.
 
 ## Implementation rules
 
