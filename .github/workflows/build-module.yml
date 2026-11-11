@@ -1,0 +1,35 @@
+name: Build True Astronaut
+
+on:
+  push:
+    branches: [ main, "work/**" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate module metadata and scripts
+        run: |
+          test -f module.prop
+          test -f customize.sh
+          test -f service.sh
+          test -f action.sh
+          grep -q '^id=true_astronaut$' module.prop
+          sh -n customize.sh
+          sh -n service.sh
+          sh -n action.sh
+      - name: Package flashable ZIP
+        run: |
+          mkdir -p dist
+          zip -r dist/True-Astronaut-dev.zip \
+            module.prop customize.sh service.sh action.sh \
+            PORTING_STATUS.md README.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: True-Astronaut-dev
+          path: dist/True-Astronaut-dev.zip
