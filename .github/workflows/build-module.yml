@@ -13,22 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate module metadata and scripts
-        run: |
-          test -f module.prop
-          test -f customize.sh
-          test -f service.sh
-          test -f action.sh
-          grep -q '^id=true_astronaut$' module.prop
-          sh -n customize.sh
-          sh -n service.sh
-          sh -n action.sh
-      - name: Package flashable ZIP
+      - name: Validate module structure and shell scripts
+        run: sh tools/validate-module.sh
+      - name: Package flashable development ZIP
         run: |
           mkdir -p dist
           zip -r dist/True-Astronaut-dev.zip \
             module.prop customize.sh service.sh action.sh \
-            PORTING_STATUS.md README.md
+            tools/collect-device-audit.sh
+          unzip -l dist/True-Astronaut-dev.zip
       - uses: actions/upload-artifact@v4
         with:
           name: True-Astronaut-dev
