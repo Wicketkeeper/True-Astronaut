@@ -1,6 +1,6 @@
 id=true_astronaut
 name=True Astronaut
-version=0.1.0-dev
-versionCode=1
+version=0.2.0-dev
+versionCode=2
 author=Wicketkeeper
-description=Device-aware Lunaris feature port for Infinix Hot 30. Development build; no feature backend enabled yet.
+description=Singularity port foundation for Infinix X6831. Diagnostics-only development build; feature backends are not enabled.
